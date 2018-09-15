@@ -1,0 +1,11 @@
+projects:
+  userservice:
+    schemaPath: schemas/userservice.graphql
+    extensions:
+      endpoints:
+        default: https://eu1.prisma.sh/emil-bergold/prisma-stitching-example-userservice/dev
+  objectservice:
+    schemaPath: schemas/objectservice.graphql
+    extensions:
+      endpoints:
+        default: https://eu1.prisma.sh/emil-bergold/prisma-stitching-example-objectservice/dev
