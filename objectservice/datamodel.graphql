@@ -1,0 +1,7 @@
+type Object {
+  id: ID! @unique
+  title: String!
+  description: String!
+  url: String!
+  owner_id: ID!
+}

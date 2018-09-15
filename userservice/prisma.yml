@@ -1,0 +1,2 @@
+endpoint: https://eu1.prisma.sh/emil-bergold/prisma-stitching-example-userservice/dev
+datamodel: datamodel.graphql
