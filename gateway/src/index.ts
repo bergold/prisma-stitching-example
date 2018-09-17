@@ -46,8 +46,39 @@ Promise.all([userserviceSchemaPromise, objectserviceSchemaPromise]).then(service
   const objectserviceSchema = serviceschemas[1]
 
   const linkTypeDefs = `
+    extend type Query {
+      test(a: AInput): String
+    }
+
+    input AInput {
+      b: Int
+    }
+    extend input AInput {
+      x: String
+    }
+
     extend type User {
       objects(
+        where: ObjectWhereInput
+        orderBy: ObjectOrderByInput
+        skip: Int
+        after: String
+        before: String
+        first: Int
+        last: Int
+      ): [Object!]
+    }
+
+    extend type Object {
+      owner: User!
+    }
+
+    extend input ObjectWhereInput {
+      owner: String
+    }
+
+    extend type Query {
+      objects2(
         where: ObjectWhereInput
         orderBy: ObjectOrderByInput
         skip: Int
@@ -71,6 +102,26 @@ Promise.all([userserviceSchemaPromise, objectserviceSchemaPromise]).then(service
             args: merge({}, args, {
               where: {
                 owner_id: user.id,
+              },
+            }),
+            context,
+            info,
+          })
+        },
+      },
+    },
+
+    Object: {
+      owner: {
+        fragment: `... on Object { owner_id }`,
+        resolve(object, args, context, info) {
+          return info.mergeInfo.delegateToSchema({
+            schema: userserviceSchema,
+            operation: 'query',
+            fieldName: 'user',
+            args: merge({}, args, {
+              where: {
+                id: object.owner_id,
               },
             }),
             context,

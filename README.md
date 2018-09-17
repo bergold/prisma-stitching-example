@@ -6,7 +6,7 @@
 query {
   users {
     id,
-  	name,
+    name,
     objects(where: { title_starts_with: "Ta" }) {
       id,
       title,
