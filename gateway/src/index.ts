@@ -1,7 +1,13 @@
 import { HttpLink } from 'apollo-link-http'
 import * as fs from 'fs'
-import { GraphQLNamedType, GraphQLSchema } from 'graphql'
-import { makeRemoteExecutableSchema, mergeSchemas } from 'graphql-tools'
+import { GraphQLSchema } from 'graphql'
+import {
+  FilterRootFields,
+  FilterTypes,
+  makeRemoteExecutableSchema,
+  mergeSchemas,
+  transformSchema,
+} from 'graphql-tools'
 import { GraphQLServer } from 'graphql-yoga'
 import * as merge from 'lodash.merge'
 import fetch from 'node-fetch'
@@ -45,18 +51,20 @@ Promise.all([userserviceSchemaPromise, objectserviceSchemaPromise]).then(service
   const userserviceSchema = serviceschemas[0]
   const objectserviceSchema = serviceschemas[1]
 
+  const transformedUserserviceSchema = transformSchema(userserviceSchema, [
+    new FilterRootFields((_, fieldName) => fieldName != 'node'),
+  ])
+
+  const transformedObjectserviceSchema = transformSchema(objectserviceSchema, [
+    new FilterRootFields((_, fieldName) => fieldName != 'node'),
+    new FilterTypes(type => {
+      // console.log(type.name)
+      return true
+    }),
+    // new PrismaTransform(),
+  ])
+
   const linkTypeDefs = `
-    extend type Query {
-      test(a: AInput): String
-    }
-
-    input AInput {
-      b: Int
-    }
-    extend input AInput {
-      x: String
-    }
-
     extend type User {
       objects(
         where: ObjectWhereInput
@@ -74,23 +82,47 @@ Promise.all([userserviceSchemaPromise, objectserviceSchemaPromise]).then(service
     }
 
     extend input ObjectWhereInput {
-      owner: String
-    }
-
-    extend type Query {
-      objects2(
-        where: ObjectWhereInput
-        orderBy: ObjectOrderByInput
-        skip: Int
-        after: String
-        before: String
-        first: Int
-        last: Int
-      ): [Object!]
+      owner: UserWhereInput
     }
   `
 
   const linkResolvers = {
+    Query: {
+      objects: {
+        async resolve(parent, args, context, info) {
+          const new_args = merge({}, args)
+          delete new_args.where.owner
+
+          // Resolve UserWhereInput to User IDs
+          if (args.where && args.where.owner) {
+            new_args.where.owner_id_in = await info.mergeInfo
+              .delegateToSchema({
+                schema: userserviceSchema,
+                operation: 'query',
+                fieldName: 'users',
+                args: {
+                  where: args.where.owner,
+                },
+                context,
+                info,
+                transforms: transformedUserserviceSchema.transforms,
+              })
+              .then(res => res.map(user => user.id))
+          }
+
+          return info.mergeInfo.delegateToSchema({
+            schema: objectserviceSchema,
+            operation: 'query',
+            fieldName: 'objects',
+            args: new_args,
+            context,
+            info,
+            transforms: transformedObjectserviceSchema.transforms,
+          })
+        },
+      },
+    },
+
     User: {
       objects: {
         fragment: `... on User { id }`,
@@ -106,6 +138,7 @@ Promise.all([userserviceSchemaPromise, objectserviceSchemaPromise]).then(service
             }),
             context,
             info,
+            transforms: transformedObjectserviceSchema.transforms,
           })
         },
       },
@@ -126,16 +159,23 @@ Promise.all([userserviceSchemaPromise, objectserviceSchemaPromise]).then(service
             }),
             context,
             info,
+            transforms: transformedUserserviceSchema.transforms,
           })
         },
       },
     },
+
+    // ObjectWhereInput: {
+    //   owner: {
+    //     resolve(parent, args, context, into) {
+    //       console.log('hit resolver')
+    //     },
+    //   },
+    // },
   }
 
   const schema = mergeSchemas({
-    schemas: (serviceschemas as (string | GraphQLSchema | GraphQLNamedType[])[]).concat([
-      linkTypeDefs,
-    ]),
+    schemas: [transformedUserserviceSchema, transformedObjectserviceSchema, linkTypeDefs],
     resolvers: linkResolvers,
   })
 
