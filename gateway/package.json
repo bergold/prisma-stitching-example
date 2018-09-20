@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "tsc --project tsconfig.json --watch & nodemon dist/index.js --",
+    "debug": "tsc --project tsconfig.json --watch & nodemon --inspect dist/index.js --",
     "build": "tsc --project tsconfig.json",
     "start": "NODE_ENV=production node dist/index.js"
   },
@@ -15,7 +16,7 @@
   "dependencies": {
     "apollo-link-http": "^1.5.5",
     "graphql": "^14.0.2",
-    "graphql-tools": "^3.1.1",
+    "graphql-tools": "^4.0.0",
     "graphql-yoga": "^1.16.2",
     "lodash.merge": "^4.6.1",
     "node-fetch": "^2.2.0"
