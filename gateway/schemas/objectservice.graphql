@@ -1,7 +1,11 @@
 # source: https://eu1.prisma.sh/emil-bergold/prisma-stitching-example-objectservice/dev
-# timestamp: Sat Sep 15 2018 22:49:58 GMT+0200 (Central European Summer Time)
+# timestamp: Tue Sep 25 2018 14:10:18 GMT+0200 (Central European Summer Time)
 
 type AggregateObject {
+  count: Int!
+}
+
+type AggregateTag {
   count: Int!
 }
 
@@ -18,11 +22,17 @@ scalar Long
 
 type Mutation {
   createObject(data: ObjectCreateInput!): Object!
+  createTag(data: TagCreateInput!): Tag!
   updateObject(data: ObjectUpdateInput!, where: ObjectWhereUniqueInput!): Object
+  updateTag(data: TagUpdateInput!, where: TagWhereUniqueInput!): Tag
   deleteObject(where: ObjectWhereUniqueInput!): Object
+  deleteTag(where: TagWhereUniqueInput!): Tag
   upsertObject(where: ObjectWhereUniqueInput!, create: ObjectCreateInput!, update: ObjectUpdateInput!): Object!
+  upsertTag(where: TagWhereUniqueInput!, create: TagCreateInput!, update: TagUpdateInput!): Tag!
   updateManyObjects(data: ObjectUpdateInput!, where: ObjectWhereInput): BatchPayload!
+  updateManyTags(data: TagUpdateInput!, where: TagWhereInput): BatchPayload!
   deleteManyObjects(where: ObjectWhereInput): BatchPayload!
+  deleteManyTags(where: TagWhereInput): BatchPayload!
 }
 
 enum MutationType {
@@ -43,6 +53,7 @@ type Object implements Node {
   description: String!
   url: String!
   owner_id: ID!
+  tags(where: TagWhereInput, orderBy: TagOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Tag!]
 }
 
 """A connection to a list of items."""
@@ -56,6 +67,19 @@ type ObjectConnection {
 }
 
 input ObjectCreateInput {
+  title: String!
+  description: String!
+  url: String!
+  owner_id: ID!
+  tags: TagCreateManyWithoutObjectInput
+}
+
+input ObjectCreateOneWithoutTagsInput {
+  create: ObjectCreateWithoutTagsInput
+  connect: ObjectWhereUniqueInput
+}
+
+input ObjectCreateWithoutTagsInput {
   title: String!
   description: String!
   url: String!
@@ -140,6 +164,28 @@ input ObjectUpdateInput {
   description: String
   url: String
   owner_id: ID
+  tags: TagUpdateManyWithoutObjectInput
+}
+
+input ObjectUpdateOneWithoutTagsInput {
+  create: ObjectCreateWithoutTagsInput
+  connect: ObjectWhereUniqueInput
+  disconnect: Boolean
+  delete: Boolean
+  update: ObjectUpdateWithoutTagsDataInput
+  upsert: ObjectUpsertWithoutTagsInput
+}
+
+input ObjectUpdateWithoutTagsDataInput {
+  title: String
+  description: String
+  url: String
+  owner_id: ID
+}
+
+input ObjectUpsertWithoutTagsInput {
+  update: ObjectUpdateWithoutTagsDataInput!
+  create: ObjectCreateWithoutTagsInput!
 }
 
 input ObjectWhereInput {
@@ -351,6 +397,9 @@ input ObjectWhereInput {
 
   """All values not ending with the given string."""
   owner_id_not_ends_with: ID
+  tags_every: TagWhereInput
+  tags_some: TagWhereInput
+  tags_none: TagWhereInput
 }
 
 input ObjectWhereUniqueInput {
@@ -374,8 +423,11 @@ type PageInfo {
 
 type Query {
   objects(where: ObjectWhereInput, orderBy: ObjectOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Object]!
+  tags(where: TagWhereInput, orderBy: TagOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Tag]!
   object(where: ObjectWhereUniqueInput!): Object
+  tag(where: TagWhereUniqueInput!): Tag
   objectsConnection(where: ObjectWhereInput, orderBy: ObjectOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): ObjectConnection!
+  tagsConnection(where: TagWhereInput, orderBy: TagOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): TagConnection!
 
   """Fetches an object given its ID"""
   node(
@@ -386,4 +438,224 @@ type Query {
 
 type Subscription {
   object(where: ObjectSubscriptionWhereInput): ObjectSubscriptionPayload
+  tag(where: TagSubscriptionWhereInput): TagSubscriptionPayload
+}
+
+type Tag implements Node {
+  id: ID!
+  object(where: ObjectWhereInput): Object
+  owner_id: ID!
+}
+
+"""A connection to a list of items."""
+type TagConnection {
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """A list of edges."""
+  edges: [TagEdge]!
+  aggregate: AggregateTag!
+}
+
+input TagCreateInput {
+  owner_id: ID!
+  object: ObjectCreateOneWithoutTagsInput
+}
+
+input TagCreateManyWithoutObjectInput {
+  create: [TagCreateWithoutObjectInput!]
+  connect: [TagWhereUniqueInput!]
+}
+
+input TagCreateWithoutObjectInput {
+  owner_id: ID!
+}
+
+"""An edge in a connection."""
+type TagEdge {
+  """The item at the end of the edge."""
+  node: Tag!
+
+  """A cursor for use in pagination."""
+  cursor: String!
+}
+
+enum TagOrderByInput {
+  id_ASC
+  id_DESC
+  owner_id_ASC
+  owner_id_DESC
+  updatedAt_ASC
+  updatedAt_DESC
+  createdAt_ASC
+  createdAt_DESC
+}
+
+type TagPreviousValues {
+  id: ID!
+  owner_id: ID!
+}
+
+type TagSubscriptionPayload {
+  mutation: MutationType!
+  node: Tag
+  updatedFields: [String!]
+  previousValues: TagPreviousValues
+}
+
+input TagSubscriptionWhereInput {
+  """Logical AND on all given filters."""
+  AND: [TagSubscriptionWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [TagSubscriptionWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [TagSubscriptionWhereInput!]
+
+  """
+  The subscription event gets dispatched when it's listed in mutation_in
+  """
+  mutation_in: [MutationType!]
+
+  """
+  The subscription event gets only dispatched when one of the updated fields names is included in this list
+  """
+  updatedFields_contains: String
+
+  """
+  The subscription event gets only dispatched when all of the field names included in this list have been updated
+  """
+  updatedFields_contains_every: [String!]
+
+  """
+  The subscription event gets only dispatched when some of the field names included in this list have been updated
+  """
+  updatedFields_contains_some: [String!]
+  node: TagWhereInput
+}
+
+input TagUpdateInput {
+  owner_id: ID
+  object: ObjectUpdateOneWithoutTagsInput
+}
+
+input TagUpdateManyWithoutObjectInput {
+  create: [TagCreateWithoutObjectInput!]
+  connect: [TagWhereUniqueInput!]
+  disconnect: [TagWhereUniqueInput!]
+  delete: [TagWhereUniqueInput!]
+  update: [TagUpdateWithWhereUniqueWithoutObjectInput!]
+  upsert: [TagUpsertWithWhereUniqueWithoutObjectInput!]
+}
+
+input TagUpdateWithoutObjectDataInput {
+  owner_id: ID
+}
+
+input TagUpdateWithWhereUniqueWithoutObjectInput {
+  where: TagWhereUniqueInput!
+  data: TagUpdateWithoutObjectDataInput!
+}
+
+input TagUpsertWithWhereUniqueWithoutObjectInput {
+  where: TagWhereUniqueInput!
+  update: TagUpdateWithoutObjectDataInput!
+  create: TagCreateWithoutObjectInput!
+}
+
+input TagWhereInput {
+  """Logical AND on all given filters."""
+  AND: [TagWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [TagWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [TagWhereInput!]
+  id: ID
+
+  """All values that are not equal to given value."""
+  id_not: ID
+
+  """All values that are contained in given list."""
+  id_in: [ID!]
+
+  """All values that are not contained in given list."""
+  id_not_in: [ID!]
+
+  """All values less than the given value."""
+  id_lt: ID
+
+  """All values less than or equal the given value."""
+  id_lte: ID
+
+  """All values greater than the given value."""
+  id_gt: ID
+
+  """All values greater than or equal the given value."""
+  id_gte: ID
+
+  """All values containing the given string."""
+  id_contains: ID
+
+  """All values not containing the given string."""
+  id_not_contains: ID
+
+  """All values starting with the given string."""
+  id_starts_with: ID
+
+  """All values not starting with the given string."""
+  id_not_starts_with: ID
+
+  """All values ending with the given string."""
+  id_ends_with: ID
+
+  """All values not ending with the given string."""
+  id_not_ends_with: ID
+  owner_id: ID
+
+  """All values that are not equal to given value."""
+  owner_id_not: ID
+
+  """All values that are contained in given list."""
+  owner_id_in: [ID!]
+
+  """All values that are not contained in given list."""
+  owner_id_not_in: [ID!]
+
+  """All values less than the given value."""
+  owner_id_lt: ID
+
+  """All values less than or equal the given value."""
+  owner_id_lte: ID
+
+  """All values greater than the given value."""
+  owner_id_gt: ID
+
+  """All values greater than or equal the given value."""
+  owner_id_gte: ID
+
+  """All values containing the given string."""
+  owner_id_contains: ID
+
+  """All values not containing the given string."""
+  owner_id_not_contains: ID
+
+  """All values starting with the given string."""
+  owner_id_starts_with: ID
+
+  """All values not starting with the given string."""
+  owner_id_not_starts_with: ID
+
+  """All values ending with the given string."""
+  owner_id_ends_with: ID
+
+  """All values not ending with the given string."""
+  owner_id_not_ends_with: ID
+  object: ObjectWhereInput
+}
+
+input TagWhereUniqueInput {
+  id: ID
 }

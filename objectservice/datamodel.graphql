@@ -4,4 +4,11 @@ type Object {
   description: String!
   url: String!
   owner_id: ID!
+  tags: [Tag!]!
+}
+
+type Tag {
+  id: ID! @unique
+  object: Object
+  owner_id: ID!
 }

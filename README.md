@@ -15,3 +15,9 @@ query {
   }
 }
 ```
+
+## hot spots
+
+- <Type>WhereInput
+- <Type>SubscriptionWhereInput
+- Mutations????

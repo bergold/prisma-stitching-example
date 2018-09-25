@@ -8,7 +8,8 @@
     "dev": "tsc --project tsconfig.json --watch & nodemon dist/index.js --",
     "debug": "tsc --project tsconfig.json --watch & nodemon --inspect dist/index.js --",
     "build": "tsc --project tsconfig.json",
-    "start": "NODE_ENV=production node dist/index.js"
+    "start": "NODE_ENV=production node dist/index.js",
+    "get-schemas": "graphql get-schema"
   },
   "engines": {
     "yarn": "WARNING! This project uses npm as the package manager"
